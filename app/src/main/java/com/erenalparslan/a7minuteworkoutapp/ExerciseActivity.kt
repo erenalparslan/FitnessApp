@@ -1,14 +1,20 @@
 package com.erenalparslan.a7minuteworkoutapp
 
+import android.media.MediaPlayer
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.speech.tts.TextToSpeech
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import com.erenalparslan.a7minuteworkoutapp.databinding.ActivityExerciseActivitiyBinding
+import java.util.*
+import kotlin.collections.ArrayList
 
 
-class ExerciseActivity : AppCompatActivity() {
+class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var binding: ActivityExerciseActivitiyBinding? = null
 
     private var restTimer: CountDownTimer? =
@@ -23,7 +29,8 @@ class ExerciseActivity : AppCompatActivity() {
 
     private var exerciseList: ArrayList<ExerciseModel>? = null // We will initialize the list later.
     private var currentExercisePosition = -1 // Current Position of Exercise.
-
+    private var tts: TextToSpeech? = null // Variable for Text to Speech
+    private var player: MediaPlayer? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityExerciseActivitiyBinding.inflate(layoutInflater)
@@ -37,6 +44,7 @@ class ExerciseActivity : AppCompatActivity() {
         binding?.toolbarExercise?.setNavigationOnClickListener {
             onBackPressed()
         }
+        tts = TextToSpeech(this, this)
         exerciseList = Constants.defaultExerciseList()
 
         setupRestView()
@@ -44,19 +52,30 @@ class ExerciseActivity : AppCompatActivity() {
 
     private fun setupRestView() {
 
+        try {
+            val soundURI =
+                Uri.parse("android.resource://com.erenalparslan.a7minuteworkoutapp/" + R.raw.app_src_main_res_raw_press_start)
+            player = MediaPlayer.create(applicationContext, soundURI)
+            player?.isLooping = false // Sets the player to be looping or non-looping.
+            player?.start() // Starts Playback.
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
         binding?.flRestView?.visibility = View.VISIBLE
         binding?.tvTitle?.visibility = View.VISIBLE
+        binding?.upcomingLabel?.visibility = View.VISIBLE
+        binding?.tvUpcomingExerciseName?.visibility = View.VISIBLE
         binding?.tvExerciseName?.visibility = View.INVISIBLE
         binding?.flExerciseView?.visibility = View.INVISIBLE
         binding?.ivImage?.visibility = View.INVISIBLE
 
-
         if (restTimer != null) {
-            restTimer!!.cancel()
+            restTimer?.cancel()
             restProgress = 0
         }
 
-        // This function is used to set the progress details.
+        binding?.tvUpcomingExerciseName?.text = exerciseList!![currentExercisePosition + 1].getName()
+
         setRestProgressBar()
     }
 
@@ -92,13 +111,15 @@ class ExerciseActivity : AppCompatActivity() {
         binding?.tvExerciseName?.visibility = View.VISIBLE
         binding?.flExerciseView?.visibility = View.VISIBLE
         binding?.ivImage?.visibility = View.VISIBLE
+        binding?.upcomingLabel?.visibility = View.INVISIBLE
+        binding?.tvUpcomingExerciseName?.visibility = View.INVISIBLE
 
 
         if (exerciseTimer != null) {
             exerciseTimer?.cancel()
             exerciseProgress = 0
         }
-
+        speakOut(exerciseList!![currentExercisePosition].getName())
         binding?.ivImage?.setImageResource(exerciseList!![currentExercisePosition].getImage())
         binding?.tvExerciseName?.text = exerciseList!![currentExercisePosition].getName()
 
@@ -132,11 +153,38 @@ class ExerciseActivity : AppCompatActivity() {
     }
 
 
+    override fun onInit(status: Int) {
+
+
+        if (status == TextToSpeech.SUCCESS) {
+            // set US English as language for tts
+            val result = tts?.setLanguage(Locale.US)
+
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                Log.e("TTS", "The Language specified is not supported!")
+            }
+
+        } else {
+            Log.e("TTS", "Initialization Failed!")
+        }
+
+    }
+
+    private fun speakOut(text: String) {
+        tts!!.speak(text, TextToSpeech.QUEUE_FLUSH, null, "")
+    }
+
     public override fun onDestroy() {
         if (restTimer != null) {
             restTimer?.cancel()
             restProgress = 0
         }
+
+        if (tts != null) {
+            tts!!.stop()
+            tts!!.shutdown()
+        }
+        // END
         super.onDestroy()
         binding = null
     }
