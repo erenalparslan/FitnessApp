@@ -1,7 +1,9 @@
 package com.erenalparslan.a7minuteworkoutapp
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.erenalparslan.a7minuteworkoutapp.databinding.ItemExerciseStatusBinding
 
@@ -22,7 +24,28 @@ class ExerciseStatusAdapter(val items: ArrayList<ExerciseModel>) :
 
         val model: ExerciseModel = items[position]
 
+
         holder.tvItem.text = model.getId().toString()
+        when {
+            model.getIsSelected() -> {
+                holder.tvItem.background =
+                    ContextCompat.getDrawable(
+                        holder.itemView.context,
+                        R.drawable.item_circular_thin_color_accent_border
+                    )
+                holder.tvItem.setTextColor(Color.parseColor("#212121")) // Parse the color string, and return the corresponding color-int.
+            }
+            model.getIsCompleted() -> {
+                holder.tvItem.background =
+                    ContextCompat.getDrawable(holder.itemView.context, R.drawable.item_circular_color_accent_background)
+                holder.tvItem.setTextColor(Color.parseColor("#FFFFFF"))
+            }
+            else -> {
+                holder.tvItem.background =
+                    ContextCompat.getDrawable(holder.itemView.context, R.drawable.item_circular_color_gray_background)
+                holder.tvItem.setTextColor(Color.parseColor("#212121"))
+            }
+        }
     }
 
 
@@ -32,7 +55,6 @@ class ExerciseStatusAdapter(val items: ArrayList<ExerciseModel>) :
 
 
     class ViewHolder(binding: ItemExerciseStatusBinding) : RecyclerView.ViewHolder(binding.root) {
-        // Holds the TextView that will add each item to
         val tvItem = binding.tvItem
     }
 }

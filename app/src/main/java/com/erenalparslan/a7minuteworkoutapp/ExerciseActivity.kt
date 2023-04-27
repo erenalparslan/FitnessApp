@@ -1,5 +1,7 @@
 package com.erenalparslan.a7minuteworkoutapp
 
+import android.app.Dialog
+import android.content.Intent
 import android.media.MediaPlayer
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
@@ -11,6 +13,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.erenalparslan.a7minuteworkoutapp.databinding.ActivityExerciseActivitiyBinding
+import com.erenalparslan.a7minuteworkoutapp.databinding.DialogCustomBackConfirmationBinding
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -45,7 +48,7 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
         }
         binding?.toolbarExercise?.setNavigationOnClickListener {
-            onBackPressed()
+            customDialogForBackButton()
         }
         tts = TextToSpeech(this, this)
         exerciseList = Constants.defaultExerciseList()
@@ -53,6 +56,10 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         setupRestView()
 
         setupExerciseStatusRecyclerView()
+    }
+
+    override fun onBackPressed() {
+        customDialogForBackButton()
     }
 
     private fun setupRestView() {
@@ -79,7 +86,8 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             restProgress = 0
         }
 
-        binding?.tvUpcomingExerciseName?.text = exerciseList!![currentExercisePosition + 1].getName()
+        binding?.tvUpcomingExerciseName?.text =
+            exerciseList!![currentExercisePosition + 1].getName()
 
         setRestProgressBar()
     }
@@ -103,6 +111,9 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             override fun onFinish() {
                 // When the 10 seconds will complete this will be executed.
                 currentExercisePosition++
+
+                exerciseList!![currentExercisePosition].setIsSelected(true) // Current Item is selected
+                exerciseAdapter!!.notifyDataSetChanged() // Notified the current item to adapter class to reflect it into UI.
                 setupExerciseView()
             }
         }.start()
@@ -144,14 +155,17 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
 
             override fun onFinish() {
+
+
                 if (currentExercisePosition < exerciseList?.size!! - 1) {
+                    exerciseList!![currentExercisePosition].setIsSelected(false) // exercise is completed so selection is set to false
+                    exerciseList!![currentExercisePosition].setIsCompleted(true) // updating in the list that this exercise is completed
+                    exerciseAdapter!!.notifyDataSetChanged() // Notifying the adapter class.
                     setupRestView()
                 } else {
-                    Toast.makeText(
-                        this@ExerciseActivity,
-                        "This is 30 seconds completed so now we will add all the exercises.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    finish()
+                    val intent = Intent(this@ExerciseActivity, FinishActivity::class.java)
+                    startActivity(intent)
                 }
             }
         }.start()
@@ -206,5 +220,24 @@ class ExerciseActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         // END
         super.onDestroy()
         binding = null
+    }
+
+    private fun customDialogForBackButton() {
+        val customDialog = Dialog(this)
+        val dialogBinding = DialogCustomBackConfirmationBinding.inflate(layoutInflater)
+        /*Set the screen content from a layout resource.
+         The resource will be inflated, adding all top-level views to the screen.*/
+        customDialog.setContentView(dialogBinding.root)
+        //not dismissed when surrounding parts of the screen is clicked
+        customDialog.setCanceledOnTouchOutside(false)
+        dialogBinding.tvYes.setOnClickListener {
+            this@ExerciseActivity.finish()
+            customDialog.dismiss() // Dialog will be dismissed
+        }
+        dialogBinding.tvNo.setOnClickListener {
+            customDialog.dismiss()
+        }
+        //Start the dialog and display it on screen.
+        customDialog.show()
     }
 }
