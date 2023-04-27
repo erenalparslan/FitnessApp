@@ -125,7 +125,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/ivImage"
         tools:visibility="visible" />
-    <!-- Todo 3: We also need to change the position of this frame layout to be below the tvExercise-->
     <FrameLayout
         android:id="@+id/flExerciseView"
         android:layout_width="100dp"
